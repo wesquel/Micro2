@@ -1,0 +1,42 @@
+#include "stm32f4xx.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include "Utility.h"
+
+int main(void)
+{
+    Configure_Clock();
+    USART1_Init();
+    Delay_Start();
+
+    printf("\n--------  Método de Monte Carlo  --------\n\n");
+    Delay_ms(2000);
+
+    RCC->AHB2ENR |= RCC_AHB2ENR_RNGEN;
+    RNG->CR |= RNG_CR_RNGEN;
+
+    int n_points = 1000000; // número de pontos a serem gerados
+    int n_inside = 0; // contador de pontos dentro do círculo
+
+    while(1)
+    {
+    	double x;
+    	double y;
+    	printf("--------- Calculando ---------\n");
+    	for (int i = 0; i < n_points; i++){
+    		x = (double)RNG->DR / 0xFFFFFFFF;
+    		y = (double)RNG->DR / 0xFFFFFFFF;
+			if(x*x + y*y <= 1.0)
+			{
+				n_inside++;
+			}
+    	}
+
+
+        double pi_estimated = 4 * (double)n_inside / (double)n_points;
+        printf("\nResultado final:\n");
+        printf("Pi estimado: %f\n", pi_estimated);
+        break;
+
+    }
+}
