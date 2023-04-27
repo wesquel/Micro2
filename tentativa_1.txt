@@ -1,0 +1,49 @@
+#include "stm32f4xx.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include "Utility.h"
+
+int main(void)
+{
+    Configure_Clock();
+    USART1_Init();
+    Delay_Start();
+
+    printf("\n--------  Método de Monte Carlo para Pi  --------\n\n");
+    Delay_ms(2000);
+
+    RCC->AHB2ENR |= RCC_AHB2ENR_RNGEN;
+    RNG->CR |= RNG_CR_RNGEN;
+
+    int n_points = 100000; // número de pontos a serem gerados
+    int n_inside = 0; // contador de pontos dentro do círculo
+
+    while(1)
+    {
+        // gera um ponto aleatório no intervalo [0,1]
+        float x = (float)RNG->DR / 0xFFFFFFFF;
+        float y = (float)RNG->DR / 0xFFFFFFFF;
+
+        // verifica se o ponto está dentro do círculo
+        if(x*x + y*y <= 1.0)
+        {
+            n_inside++;
+        }
+
+        // calcula o valor estimado de Pi a cada 1000 pontos gerados
+        if(n_inside % 1000 == 0)
+        {
+            float pi_estimated = 4.0 * (float)n_inside / (float)n_points;
+            printf("Pi estimado: %f\n", pi_estimated);
+        }
+
+        // interrompe a geração de pontos quando atingir o número desejado
+        if(n_inside == n_points)
+        {
+            float pi_estimated = 4.0 * (float)n_inside / (float)n_points;
+            printf("\nResultado final:\n");
+            printf("Pi estimado: %f\n", pi_estimated);
+            break;
+        }
+    }
+}

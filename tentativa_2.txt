@@ -1,0 +1,43 @@
+#include "stm32f4xx.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "Utility.h"
+
+#define N 1000000 // número de pontos a serem gerados
+
+int main(void)
+{
+    Configure_Clock();
+    USART1_Init();
+    Delay_Start();
+
+    printf("\n--------  Exemplo com RNG e Monte Carlo  --------\n\n");
+    Delay_ms(2000);
+
+    RCC->AHB2ENR |= RCC_AHB2ENR_RNGEN;    // habilita o clock do RNG
+    RNG->CR |= RNG_CR_RNGEN;            // liga o RNG
+
+    int i, count = 0;
+    float x, y, z, pi;
+
+    for (i = 0; i < N; i++) {
+        while (!(RNG->SR & RNG_SR_DRDY)); // espera até que um número aleatório esteja pronto
+        x = (float)RNG->DR / (float)0x7FFFFFFF; // gera coordenada x aleatória entre 0 e 1
+        while (!(RNG->SR & RNG_SR_DRDY)); // espera até que outro número aleatório esteja pronto
+        y = (float)RNG->DR / (float)0x7FFFFFFF; // gera coordenada y aleatória entre 0 e 1
+        z = x*x + y*y; // calcula a distância do ponto ao centro
+        if (z <= 1) { // se o ponto está dentro do círculo de raio 1
+            count++; // incrementa o contador
+        }
+    }
+
+    pi = (float)count / N * 4; // calcula o valor aproximado de Pi
+
+    printf("Valor aproximado de Pi: %f\n", pi);
+
+    while(1) {
+        GPIO_ToggleBits(GPIOA, GPIO_Pin_5); // alternar o estado do LED conectado ao pino PA5
+        for (i = 0; i < 1000000; i++); // esperar um pouco para que o LED seja visível
+    }
+}

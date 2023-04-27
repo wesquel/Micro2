@@ -1,0 +1,30 @@
+#include "stm32f4xx.h"
+
+#define existeNovoDadoAleatorio (RNG->SR & RNG_SR_DRDY)
+#define buscaValorAleatorio RNG->DR
+
+int main(void)
+{
+    RCC->AHB2ENR |= RCC_AHB2ENR_RNGEN; // habilita o clock do RNG
+    RNG->CR |= RNG_CR_RNGEN; // habilita o gerador de números aleatórios
+
+    unsigned int Nt = 1000000;
+    unsigned int Nin = 0;
+
+    for (unsigned int i = 0; i < Nt; i++) {
+        // gera números aleatórios no intervalo [0,1]
+        float x, y;
+        while (!existeNovoDadoAleatorio); // aguarda novo número gerado
+        x = (float) buscaValorAleatorio / 0xFFFFFFFF;
+
+        while (!existeNovoDadoAleatorio); // aguarda novo número gerado
+        y = (float) buscaValorAleatorio / 0xFFFFFFFF;
+
+        // verifica se o ponto (x,y) está dentro do círculo de raio 1
+        if (y*y + x*x <= 1.0f) {
+            Nin++;
+        }
+    }
+
+    float PI = 4.0f * Nin / Nt;
+}
