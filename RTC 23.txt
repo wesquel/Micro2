@@ -1,0 +1,84 @@
+#include <stdio.h>
+#include "Utility.h"
+
+typedef struct {
+    uint8_t formato,
+    dia,
+    data,
+    mes,
+    ano,
+    horas,
+    minutos,
+    segundos;
+} RTC_CalendarTypeDef;
+
+void RTC_Config(void);
+void RTC_SetCalendar(RTC_CalendarTypeDef*);
+
+volatile uint32_t millis = 0;
+
+void SysTick_Handler(void) {
+    millis++;
+}
+
+void delay_ms(uint32_t ms) {
+    uint32_t start = millis;
+    while (millis - start < ms) {
+        // Wait for the specified number of milliseconds
+    }
+}
+
+int main(void) {
+    Configure_Clock();
+    SysTick_Config(SystemCoreClock / 1000);  // Configure SysTick timer to interrupt every 1ms
+    USART1_Init();
+
+    RTC_CalendarTypeDef RTC_Calendar;
+    RTC_Calendar.formato = 0;
+    RTC_Calendar.dia = 2;
+    RTC_Calendar.data = 2;
+    RTC_Calendar.mes = 12;
+    RTC_Calendar.ano = 25;
+    RTC_Calendar.horas = 10;
+    RTC_Calendar.minutos = 50;
+    RTC_Calendar.segundos = 0;
+
+    printf("================ RTC =====================\n\n");
+    printf("VERIFICANDO RTC");
+    delay_ms(2000);
+    if (RTC->ISR & RTC_ISR_INITS) {
+        printf("RTC Ainda não foi inicializado\n");
+    } else {
+        printf("RTC ainda não foi inicializado.\n");
+        delay_ms(1000);
+        printf("Inicializando RTC... \n");
+    }
+    delay_ms(1000);
+    RTC_Config();
+    RTC_SetCalendar(&RTC_Calendar);
+    printf("RTC inicializado com sucesso!\n\n");
+
+    // Mapping weekday names to their respective numbers
+    const char* weekdayNames[] = {"Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"};
+
+    // Mapping month names to their respective numbers
+    const char* monthNames[] = {"", "janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"};
+
+    while (1) {
+        // Getting current date and time from RTC
+        uint8_t dayOfWeek = (RTC->DR >> 13) & 0x07;
+        uint8_t day = ((RTC->DR >> 4) & 0x03) * 10 + (RTC->DR & 0x0F);
+        uint8_t month = ((RTC->DR >> 8) & 0x01) * 10 + ((RTC->DR >> 12) & 0x0F);
+        uint8_t year = ((RTC->DR >> 16) & 0x0F) * 10 + ((RTC->DR >> 20) & 0x0F);
+        uint8_t hour = ((RTC->TR >> 16) & 0x03) * 10 + ((RTC->TR >> 20) & 0x0F);
+        uint8_t minute = ((RTC->TR >> 8) & 0x07) * 10 + ((RTC->TR >> 12) &
+        uint8_t second = ((RTC->TR >> 4) & 0x07) * 10 + (RTC->TR & 0x0F);
+
+        // Printing the formatted date and time
+        printf("Hoje é %s, %d de %s de 20%02d. A hora atual é %02d:%02d:%02d.\n",
+               weekdayNames[dayOfWeek], day, monthNames[month], year, hour, minute, second);
+
+        delay_ms(1000); // 1-second delay
+    }
+}
+
